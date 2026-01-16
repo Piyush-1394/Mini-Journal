@@ -1,6 +1,9 @@
 package com.projectwp.journalApp.controller;
 import java.util.List;
+import java.util.Optional;
 
+import com.projectwp.journalApp.exception.ResourceNotFoundException;
+import com.projectwp.journalApp.service.UserService;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -22,12 +25,14 @@ public class JournalEntryController {
 	
 	@Autowired
 	private JournalEntryService journalEntryService;
+
+	@Autowired
+	private UserService userService;
 	
 	
-	@PostMapping
-	public JournalEntry createEntry(@RequestBody JournalEntry myEntry) {  
-		journalEntryService.saveEntry(myEntry);
-		return myEntry;
+	@PostMapping("/{userName}")
+	public User createEntry(@PathVariable String userName, @RequestBody JournalEntry myEntry) {
+		return userService.saveEntry(userName, myEntry);
 	}
 	
 	@GetMapping("/find/{id}")
@@ -35,19 +40,26 @@ public class JournalEntryController {
 		return journalEntryService.findById(id);
 	}
 	
-	@GetMapping
-	public List<JournalEntry> getAll(){
-		return journalEntryService.getAll();
+	@GetMapping("/all/{userName}")
+	public List<JournalEntry> getAllJournalEntriesOfUser(@PathVariable String userName){
+
+		User user = userService.findUserByUserName(userName);
+		List<JournalEntry> allJournal = user.getJournalEntries();
+		return allJournal;
 	}
 	
-	@DeleteMapping("/delete/{id}")
-	public String deleteEntry(@PathVariable ObjectId id) {
-		journalEntryService.deleteById(id);
+	@DeleteMapping("/delete/{userName}/{id}")
+	public String deleteEntry(@PathVariable ObjectId id, @PathVariable String userName) {
+		journalEntryService.deleteById(id, userName);
 		return "Deleted journal entry with id : "+id;
 	}
 	
-	@PutMapping("/update/{id}")
-	public JournalEntry updateEntryById(@PathVariable ObjectId id, @RequestBody JournalEntry newEntry) {
+	@PutMapping("/update/{userName}/{id}")
+	public JournalEntry updateEntryById(
+			@PathVariable ObjectId id,
+			@PathVariable String userName,
+			@RequestBody JournalEntry newEntry
+	) {
 		JournalEntry updatedEntry = journalEntryService.updateJournalEntryById(id, newEntry);
 		return updatedEntry;
 	}
